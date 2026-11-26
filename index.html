@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0e1424">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Robo Perkasa — Pertarungan Robot Gergasi</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+    <canvas id="cv" aria-label="Arena pertarungan robot"></canvas>
+
+    <!-- Butang jeda -->
+    <button id="btn-pause" class="hud-btn hidden" aria-label="Jeda">⏸</button>
+
+    <!-- Kawalan sentuh -->
+    <div id="touch" class="hidden">
+      <div class="pad-left">
+        <button class="tc dir" data-k="left" aria-label="Kiri">◀</button>
+        <button class="tc dir" data-k="right" aria-label="Kanan">▶</button>
+      </div>
+      <div class="pad-right">
+        <button class="tc special" data-k="special"><span>⚡</span><small>Kuasa</small></button>
+        <button class="tc sm" data-k="block"><span>🛡️</span><small>Perisai</small></button>
+        <button class="tc sm" data-k="dodge"><span>💨</span><small>Elak</small></button>
+        <button class="tc" data-k="kick"><span>🦶</span><small>Tendang</small></button>
+        <button class="tc big" data-k="punch"><span>👊</span><small>Tumbuk</small></button>
+      </div>
+    </div>
+    <div id="keys-hint" class="hidden">⌨️ <b>← →</b> Gerak &nbsp; <b>Z</b> Tumbuk &nbsp; <b>X</b> Tendang &nbsp; <b>C</b> Perisai (tahan) &nbsp; <b>V</b> Elak &nbsp; <b>Spasi</b> Kuasa ⚡ &nbsp; <b>P</b> Jeda</div>
+
+    <!-- MENU UTAMA -->
+    <section id="scr-menu" class="screen">
+      <div class="menu-top">
+        <span class="pill coins">🪙 <b class="coin-val">0</b></span>
+        <button id="btn-sound" class="pill btn-icon" aria-label="Bunyi">🔊</button>
+      </div>
+      <div class="menu-col">
+        <h1 class="logo"><span>ROBO</span><span>PERKASA</span></h1>
+        <p class="tagline">Pertarungan Robot Gergasi 🤖⚡</p>
+        <button id="btn-play" class="btn primary big">▶ MAIN <small id="play-level">Peringkat 1</small></button>
+        <button id="btn-garage" class="btn blue">🔧 GARAJ ROBOT</button>
+        <button id="btn-learn" class="btn green">📚 BELAJAR &amp; DAPAT 🪙</button>
+        <button id="btn-parent" class="btn gray small">👨‍👩‍👧 Ibu Bapa</button>
+        <p class="rehat-info">⏰ Masa rehat dalam <b class="rehat-left">10:00</b></p>
+      </div>
+    </section>
+
+    <!-- KEPUTUSAN -->
+    <section id="scr-result" class="screen dim">
+      <div class="card result-card">
+        <h2 id="res-title">MENANG!</h2>
+        <p id="res-msg"></p>
+        <div id="res-coins" class="reward">+0 🪙</div>
+        <div class="row">
+          <button id="res-next" class="btn primary">▶ Seterusnya</button>
+          <button id="res-garage" class="btn blue">🔧 Garaj</button>
+          <button id="res-menu" class="btn gray">🏠 Menu</button>
+        </div>
+        <p class="rehat-info">⏰ Masa rehat dalam <b class="rehat-left">10:00</b></p>
+      </div>
+    </section>
+
+    <!-- GARAJ -->
+    <section id="scr-garage" class="screen">
+      <div class="garage-panel">
+        <div class="garage-head">
+          <h2>🔧 GARAJ ROBOT</h2>
+          <span class="pill coins">🪙 <b class="coin-val">0</b></span>
+        </div>
+        <div id="upg-list"></div>
+        <h3>🎨 Cat Robot</h3>
+        <div id="skin-list"></div>
+        <div class="row">
+          <button id="gar-fight" class="btn primary">▶ LAWAN <small id="gar-level">Peringkat 1</small></button>
+          <button id="gar-menu" class="btn gray">🏠 Menu</button>
+        </div>
+        <p class="rehat-info">⏰ Masa rehat dalam <b class="rehat-left">10:00</b></p>
+      </div>
+    </section>
+
+    <!-- JEDA -->
+    <section id="scr-pause" class="screen dim">
+      <div class="card">
+        <h2>⏸ BERHENTI SEKEJAP</h2>
+        <div class="col">
+          <button id="pause-resume" class="btn primary">▶ Sambung</button>
+          <button id="pause-menu" class="btn gray">🏠 Menu Utama</button>
+        </div>
+        <p class="hint-small">Kawalan: ◀ ▶ gerak, 👊 tumbuk, 🦶 tendang, 🛡️ tahan untuk perisai, 💨 elak, ⚡ kuasa khas (bila tenaga penuh).</p>
+      </div>
+    </section>
+
+    <!-- PINTU IBU BAPA -->
+    <section id="scr-gate" class="screen dim">
+      <div class="card gate-card">
+        <h2>👨‍👩‍👧 Untuk Ibu Bapa</h2>
+        <p>Jawab soalan ini untuk masuk ke tetapan:</p>
+        <div class="gate-q"><span id="gate-q">7 × 8</span> = <span id="gate-a" class="gate-a">?</span></div>
+        <div id="gate-pad" class="pad"></div>
+        <button id="gate-cancel" class="btn gray small">✖ Batal</button>
+      </div>
+    </section>
+
+    <!-- TETAPAN -->
+    <section id="scr-settings" class="screen dim">
+      <div class="card settings-card">
+        <h2>⚙️ Tetapan Ibu Bapa</h2>
+        <div class="set-row">
+          <label>⏰ Masa bermain sebelum rehat</label>
+          <div class="seg" id="set-interval"></div>
+        </div>
+        <div class="set-row">
+          <label>❓ Soalan bagi setiap subjek</label>
+          <div class="seg" id="set-per"></div>
+        </div>
+        <div class="set-row col-row">
+          <label>📚 Mata pelajaran semasa rehat</label>
+          <div id="set-subjects" class="chips"></div>
+        </div>
+        <div class="set-row stats" id="set-stats"></div>
+        <div class="row">
+          <button id="set-break" class="btn green small">📚 Mula rehat sekarang</button>
+          <button id="set-reset" class="btn red small">🗑️ Set semula kemajuan</button>
+          <button id="set-back" class="btn primary small">✔ Simpan &amp; Kembali</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- MASA REHAT (belajar) -->
+    <section id="scr-rehat" class="screen">
+      <div class="rehat-wrap">
+        <!-- pengenalan -->
+        <div id="rh-intro" class="rh-panel">
+          <div class="rh-alarm">⏰</div>
+          <h2 id="rh-intro-title">MASA REHAT!</h2>
+          <p id="rh-intro-msg"></p>
+          <div id="rh-intro-subjects" class="chips"></div>
+          <button id="rh-start" class="btn primary big">📚 Mula Belajar ▶</button>
+        </div>
+
+        <!-- soalan -->
+        <div id="rh-quiz" class="rh-panel hidden">
+          <div class="rh-top">
+            <div id="rh-dots" class="dots"></div>
+            <div class="battery"><span>🔋</span><div class="bat"><div id="rh-bat" class="bat-fill"></div></div><b id="rh-bat-txt">0%</b></div>
+          </div>
+          <div id="rh-card" class="q-card">
+            <div id="rh-subj" class="q-subj">📖 Bahasa Melayu</div>
+            <div id="rh-gambar" class="q-gambar"></div>
+            <div id="rh-sebutan" class="q-sebutan"></div>
+            <div class="q-line">
+              <p id="rh-q" class="q-text"></p>
+              <button id="rh-speak" class="btn-icon round" aria-label="Baca soalan">🔊</button>
+              <button id="rh-listen" class="btn-icon round hidden" aria-label="Dengar bunyi">🎵</button>
+            </div>
+            <div id="rh-opts" class="opts"></div>
+            <div id="rh-feedback" class="feedback"></div>
+            <button id="rh-next" class="btn primary hidden">Seterusnya ▶</button>
+          </div>
+        </div>
+
+        <!-- aktiviti badan -->
+        <div id="rh-activity" class="rh-panel hidden">
+          <h2>🏃 Aktiviti Badan</h2>
+          <div id="rh-act-icon" class="act-icon">🤸</div>
+          <p id="rh-act-text" class="act-text"></p>
+          <div id="rh-act-timer" class="act-timer">20</div>
+          <button id="rh-act-done" class="btn primary" disabled>✔ Saya sudah buat!</button>
+        </div>
+
+        <!-- ringkasan -->
+        <div id="rh-summary" class="rh-panel hidden">
+          <div class="rh-alarm">⭐</div>
+          <h2 id="rh-sum-title">HEBAT!</h2>
+          <p id="rh-sum-msg"></p>
+          <div id="rh-sum-coins" class="reward">+0 🪙</div>
+          <p>🔋 Robot Perkasa sudah dicas penuh!</p>
+          <button id="rh-end" class="btn primary big">▶ Sambung Main</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="rotate">
+    <div>📱🔄</div>
+    <p>Sila pusingkan telefon ke kedudukan melintang untuk bermain.</p>
+  </div>
+
+  <script src="js/audio.js"></script>
+  <script src="js/save.js"></script>
+  <script src="js/questions.js"></script>
+  <script src="js/robot.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/rehat.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
