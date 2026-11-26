@@ -21,6 +21,7 @@ Tiada pemasangan diperlukan: game ini hanya HTML + JavaScript (tiada pelayan, ti
 | Perisai (tahan) | `C` (atau `L` / `↓`) | 🛡️ |
 | Elak (undur laju) | `V` (atau `Shift`) | 💨 |
 | Kuasa khas ⚡ (bila tenaga penuh) | `Spasi` | ⚡ |
+| Serangan SUPER ⭐ (bila bar emas penuh) | `B` | ⭐ SUPER |
 | Jeda | `P` / `Esc` | ⏸ |
 
 Di telefon, pusingkan peranti ke kedudukan **melintang**.
@@ -54,6 +55,12 @@ Pukul musuh untuk mengisi tenaga ⚡. Bila penuh, tekan **⚡ Kuasa**. Beli dan 
 | ❄️ Sinar Beku | 1200 🪙 | Bekukan musuh selama 2 saat |
 
 Musuh juga ada kuasa masing-masing, dan Raja Gerhana boleh guna semua kuasa secara rawak.
+
+### ⭐ Serangan SUPER
+
+Serangan paling hebat. **Bar emas ⭐** (di bawah bar tenaga) penuh perlahan-lahan apabila kamu memukul musuh, buat kombo atau dipukul. Bila penuh, tekan **⭐ SUPER**:
+skrin jadi gelap, kamera zum, robot bercahaya emas, terbang ke langit dan menjunam macam komet. Musuh terpelanting dan hilang separuh nyawa (musuh biasa). Serangan ini tak boleh ditahan.
+Bermula peringkat 3, musuh juga boleh guna Serangan SUPER mereka sendiri!
 
 ## ⏰ Masa Rehat (setiap 10 minit)
 

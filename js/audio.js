@@ -87,6 +87,16 @@ const Sfx = (() => {
     freeze: () => { [1568, 2093, 2637, 3136].forEach((f, i) => tone({ f, type: 'sine', d: 0.3, v: 0.07, delay: i * 0.04 })); noise({ ft: 'highpass', fq: 5000, d: 0.4, v: 0.08 }); },
     shatter: () => { noise({ ft: 'highpass', fq: 2500, d: 0.45, v: 0.3 }); [2349, 3136, 2794, 3520].forEach((f, i) => tone({ f, type: 'triangle', d: 0.15, v: 0.06, delay: i * 0.03 })); },
     jump: () => { tone({ f: 180, to: 520, type: 'triangle', d: 0.18, v: 0.12 }); noise({ fq: 400, d: 0.15, v: 0.2 }); },
+    superCharge: () => {
+      tone({ f: 110, to: 880, type: 'sawtooth', d: 0.9, v: 0.09 }); tone({ f: 220, to: 1760, type: 'sine', d: 0.9, v: 0.07 });
+      noise({ ft: 'bandpass', fq: 300, fqTo: 4000, d: 0.9, v: 0.12, a: 0.3 });
+      seq([523, 659, 784, 1047], 'triangle', 0.14, 0.18, 0.4);
+    },
+    superDive: () => { noise({ ft: 'bandpass', fq: 3000, fqTo: 300, d: 0.4, v: 0.3 }); tone({ f: 900, to: 120, type: 'sawtooth', d: 0.4, v: 0.08 }); },
+    superHit: () => {
+      noise({ fq: 2000, fqTo: 60, d: 1.6, v: 0.85 }); tone({ f: 70, to: 25, d: 1.4, v: 0.8 });
+      seq([1047, 1319, 1568, 2093], 'square', 0.07, 0.07, 0.35);
+    },
     zap: () => { tone({ f: 60, to: 1200, type: 'sawtooth', d: 0.45, v: 0.08 }); noise({ ft: 'highpass', fq: 3000, d: 0.45, v: 0.1 }); },
   };
 

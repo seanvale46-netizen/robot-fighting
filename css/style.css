@@ -125,6 +125,9 @@ button:disabled { cursor: default; }
 #touch .pad-right [data-k="kick"] { right: 8em; bottom: .9em; background: rgba(230,140,40,.5); }
 #touch .pad-right [data-k="dodge"] { right: 1.6em; bottom: 8.1em; width: 4.4em; height: 4.4em; }
 #touch .pad-right [data-k="block"] { right: 7.4em; bottom: 6.6em; width: 4.4em; height: 4.4em; background: rgba(60,170,255,.5); }
+#touch .pad-right .tc.super { right: 13.2em; bottom: 9.8em; width: 4.6em; height: 4.6em; background: rgba(255,190,40,.6); border-color: #ffe066; opacity: .4; }
+#touch .pad-right .tc.super.ready { opacity: 1; animation: superPulse .6s ease-in-out infinite; }
+@keyframes superPulse { 0%,100% { box-shadow: 0 0 .4em #ffd23f; transform: scale(1); } 50% { box-shadow: 0 0 1.4em #ffd23f; transform: scale(1.08); } }
 #touch .pad-right .tc.special { right: 13.6em; bottom: 4.6em; width: 4.6em; height: 4.6em; background: rgba(150,90,255,.55); }
 #keys-hint {
   position: absolute; z-index: 4; left: 50%; bottom: .8em; transform: translateX(-50%);
@@ -335,3 +338,6 @@ body.portrait #rotate { display: flex; }
 .combo-item b { display: block; color: #ffe14d; font-size: .95em; }
 .combo-item span { font-size: .75em; opacity: .85; }
 .combo-item.lock { opacity: .55; }
+
+.super-info { margin: .4em 0 .6em; padding: .5em .8em; border-radius: .7em; background: rgba(255,210,63,.14); border: .12em solid rgba(255,210,63,.5); font-size: .9em; line-height: 1.35; }
+.super-info b { color: #ffe066; }

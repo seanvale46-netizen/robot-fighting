@@ -330,7 +330,8 @@
     KeyZ: 'punch', KeyJ: 'punch', KeyX: 'kick', KeyK: 'kick',
     KeyC: 'block', KeyL: 'block', ArrowDown: 'block', KeyS: 'block',
     KeyV: 'dodge', KeyI: 'dodge', ShiftLeft: 'dodge', ShiftRight: 'dodge',
-    Space: 'special', KeyU: 'special', ArrowUp: 'special', KeyW: 'special'
+    Space: 'special', KeyU: 'special', ArrowUp: 'special', KeyW: 'special',
+    KeyB: 'super', KeyQ: 'super', Enter: 'super'
   };
   window.addEventListener('keydown', e => {
     Sfx.unlock();
@@ -370,6 +371,7 @@
 
   // ───────────── Gelung utama ─────────────
   let last = performance.now(), infoT = 0;
+  const superBtn = $('tc-super');
   function frame(now) {
     const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
     last = now;
@@ -377,6 +379,7 @@
     Game.update(dt);
     Game.render();
     infoT -= dt;
+    superBtn.classList.toggle('ready', Game.superReady());
     if (infoT <= 0) {
       infoT = 0.5;
       const t = fmt(Rehat.remaining());
