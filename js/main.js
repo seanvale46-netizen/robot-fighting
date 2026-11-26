@@ -114,7 +114,7 @@
       const own = Save.d.powers.includes(id), on = Save.d.power === id;
       const row = document.createElement('div');
       row.className = 'upg' + (on ? ' equipped' : '');
-      row.innerHTML = `<div class="upg-ico">${pw.ikon}</div><div class="upg-info"><b>${pw.nama}</b><span>${pw.desc}</span></div>`;
+      row.innerHTML = `<div class="upg-ico">${pw.ikon}</div><div class="upg-info"><b>${pw.nama}</b><span>${pw.desc}</span><span class="sup">⭐ SUPER: ${pw.sup}</span></div>`;
       const b = document.createElement('button');
       b.className = 'btn buy ' + (on ? 'green' : own ? 'blue' : Save.d.coins >= pw.harga ? 'primary' : 'locked');
       b.innerHTML = on ? '✔ Dipakai' : own ? 'Pakai' : `🪙 ${pw.harga}`;
@@ -200,6 +200,8 @@
       const p = Game.POWERS[id], own = Save.d.powers.includes(id);
       return `<div class="combo-item ${own ? '' : 'lock'}"><div class="combo-keys">${p.ikon}</div><div><b>${p.nama}${Save.d.power === id ? ' ✔' : own ? '' : ' 🔒'}</b><span>${p.desc}</span></div></div>`;
     }).join('');
+    const cur = Game.POWERS[Save.d.power] || Game.POWERS.laser;
+    $('super-now').innerHTML = `SUPER kamu sekarang: <b>${cur.ikon} ${cur.sup}</b> — tukar kuasa di 🔧 Garaj untuk dapat SUPER lain!`;
     show('scr-combos');
   }
 

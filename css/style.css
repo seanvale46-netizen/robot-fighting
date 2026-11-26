@@ -326,7 +326,7 @@ body.portrait #rotate { display: flex; }
 .upg.equipped { box-shadow: inset 0 0 0 .15em #ffd23f; background: rgba(255,210,63,.12); }
 
 /* Senarai kombo */
-.combos-card { width: 56em; padding: .9em 1.3em; font-size: .88em; }
+.combos-card { width: 56em; padding: .8em 1.3em; font-size: .84em; }
 #power-info span { display: none; }
 .combos-card h2 { font-size: 1.6em; margin-bottom: .1em; }
 #power-info { grid-template-columns: 1fr 1fr 1fr; }
@@ -341,3 +341,5 @@ body.portrait #rotate { display: flex; }
 
 .super-info { margin: .4em 0 .6em; padding: .5em .8em; border-radius: .7em; background: rgba(255,210,63,.14); border: .12em solid rgba(255,210,63,.5); font-size: .9em; line-height: 1.35; }
 .super-info b { color: #ffe066; }
+
+.upg-info .sup { color: #ffe066; opacity: 1; font-weight: 800; }

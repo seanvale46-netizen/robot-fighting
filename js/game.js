@@ -38,6 +38,8 @@ const Game = (() => {
     ais: { ikon: '❄️', nama: 'Sinar Beku', desc: 'Bekukan musuh selama 2 saat', harga: 1200, wind: 0.4, act: 0.35, rec: 0.35 },
   };
   const POWER_IDS = Object.keys(POWERS);
+  const SUPER_INFO = { laser: 'Meriam Hiper', roket: 'Hujan Roket', gempa: 'Gempa Gergasi', pedang: 'Tetakan Seribu', petir: 'Ribut Petir', ais: 'Zaman Ais' };
+  for (const id of POWER_IDS) POWERS[id].sup = SUPER_INFO[id];
 
   const COMBOS = [
     { keys: '👊 👊 👊', nama: 'Uppercut Gergasi', desc: 'Lambung musuh tinggi ke udara' },
@@ -469,9 +471,9 @@ const Game = (() => {
    * h: { dmg, push, stun, launch, slam, freeze, blockMul, unblockable, shake, en, x, y, sfx, stop, name, big }
    */
   function applyHit(a, d, h) {
-    if (d.state === 'ko' || d.invuln > 0) return false;
+    if (d.state === 'ko' || (d.invuln > 0 && !h.pierce)) return false;
     const blocked = !h.unblockable && d.state === 'block' && d.facing === -a.facing && d.z <= 0;
-    const scale = a.comboT > 0 ? Math.max(0.55, 1 - 0.07 * a.combo) : 1;
+    const scale = !h.noScale && a.comboT > 0 ? Math.max(0.55, 1 - 0.07 * a.combo) : 1;
     let dmg = h.dmg * a.dmgMult * scale;
     const hx = h.x != null ? h.x : d.x, hy = h.y != null ? h.y : d.y - 200 * d.size;
     if (blocked) {
@@ -645,80 +647,299 @@ const Game = (() => {
     projs = projs.filter(p => p.life > 0);
   }
 
-  // ───────────── Serangan Super (sinematik) ─────────────
+  // ───────────── Serangan Super (sinematik, ikut kuasa yang dipakai) ─────────────
   const GOLD = '#ffd23f';
+  const SUPERS = {
+    laser: { nama: 'MERIAM HIPER', ikon: '⚡', col: null, desc: 'Laser gergasi berterusan yang menolak musuh ke dinding' },
+    roket: { nama: 'HUJAN ROKET', ikon: '🚀', col: '#ff9f1c', desc: '15 roket jatuh dari langit ke atas musuh' },
+    gempa: { nama: 'GEMPA GERGASI', ikon: '🌋', col: '#ff7b2e', desc: 'Hentakan dari langit, tiang batu meletus dari tanah' },
+    pedang: { nama: 'TETAKAN SERIBU', ikon: '🗡️', col: '#ff4df0', desc: 'Tetak dari semua arah, kemudian pedang gergasi' },
+    petir: { nama: 'RIBUT PETIR', ikon: '🌩️', col: '#7fd4ff', desc: 'Terapung di langit & panggil 9 petir' },
+    ais: { nama: 'ZAMAN AIS', ikon: '❄️', col: '#bff6ff', desc: 'Bekukan musuh dalam kristal gergasi, kemudian pecahkan!' },
+    nova: { nama: 'NOVA GERGASI', ikon: '⭐', col: GOLD, desc: 'Terbang ke langit & menjunam macam komet' },
+  };
+  function rgbOf(hex) { const n = parseInt(hex.replace('#', ''), 16); return `${n >> 16 & 255},${n >> 8 & 255},${n & 255}`; }
+
   function startSuper(f) {
     const o = f === P ? E : P;
     f.superE = 0;
     f.facing = o.x >= f.x ? 1 : -1;
-    superSeq = { f, o, t: 0, sx: 0, stage: 0 };
+    const type = f.power === 'rawak' ? pick([...POWER_IDS, 'nova']) : (SUPERS[f.power] ? f.power : 'nova');
+    const D = SUPERS[type];
+    const total = (f.isP ? 45 + o.maxHp * 0.12 : 28 + o.maxHp * 0.08) / f.dmgMult * (f.isP ? 1 + (f.dmgMult - 1) * 0.6 : 1);
+    superSeq = { f, o, t: 0, type, col: D.col || f.d.glow, total, stage: 0, n1: 0, n2: 0, p: [], pose: 'superW', sx: 0 };
     setState(f, 'super', true);
     f.vx = 0; f.vz = 0; f.rot = 0; f.trail = [];
     if (isAttack(o) || o.state === 'block' || o.state === 'walk' || o.state === 'dodge') setState(o, 'idle', true);
     o.vx = 0;
     projs = [];
     if (f.isP) clearInput();
-    banner = { text: f.isP ? '⭐ SUPER NOVA PERKASA! ⭐' : '⭐ SUPER ' + f.name + '! ⭐', c: f.isP ? GOLD : '#ff8a8a', life: 2.2, max: 2.2 };
+    banner = { text: `${D.ikon} SUPER ${D.nama}! ${D.ikon}`, c: f.isP ? GOLD : '#ff8a8a', life: 2.4, max: 2.4 };
     Sfx.play('superCharge');
     flash = Math.max(flash, 0.4);
   }
+
+  function superHit(S, frac, h) {
+    const f = S.f, o = S.o;
+    return applyHit(f, o, Object.assign({
+      dmg: S.total * frac, unblockable: true, pierce: true, noScale: true, isSuper: true, en: 0,
+      push: 60, stun: 0.35, sfx: 'punch', stop: 0.03, shake: 5,
+      x: o.x - f.facing * 30 * o.size, y: o.y - 190 * o.size
+    }, h));
+  }
+  function superFinal(S, frac, h) {
+    const o = S.o;
+    if (o.state === 'frozen' || o.state === 'down' || o.state === 'getup') { o.koA = 0; setState(o, 'idle', true); }
+    const hx = o.x - S.f.facing * 30 * o.size, hy = o.y - 180 * o.size;
+    superHit(S, frac, Object.assign({ launch: 1000, push: 280, big: true, sfx: 'superHit', stop: 0.22, shake: 32, x: hx, y: hy }, h));
+    boom(hx, hy, 1.7); boom(hx + rnd(-60, 60), hy + rnd(-80, 40), 1.1);
+    ring(hx, hy, `rgba(${rgbOf(S.col)},`, 320); ring(hx, hy, 'rgba(255,255,255,', 200);
+    for (let i = 0; i < 24; i++) { const a = (i / 24) * Math.PI * 2; parts.push({ t: 'spark', x: hx, y: hy, vx: Math.cos(a) * 900, vy: Math.sin(a) * 900, life: 0.5, max: 0.5, c: S.col, w: 5 }); }
+    flash = 1;
+    if (phase === 'fight') { slow = 0.35; slowT = 0.9; }
+    floatText(o.x, o.y - 360 * o.size, 'SUPER!', GOLD, 48);
+  }
+  function superEnd() {
+    const S = superSeq;
+    if (!S) return;
+    superSeq = null;
+    const f = S.f;
+    f.rot = 0; f.trail = [];
+    setState(f, 'idle', true);
+    if (f.z > 0) f.vz = Math.min(f.vz, 0);
+  }
+
   function updateSuper(dt) {
     const S = superSeq, f = S.f, o = S.o;
     S.t += dt; f.t += dt;
-    const cx = f.x, cy = f.y - 170 * f.size;
+    for (const g of f.trail) g.life -= dt;
+    f.trail = f.trail.filter(g => g.life > 0);
     if (S.t < 0.9) {
+      // fasa cas: gelap, zum, aura
+      S.pose = 'superW';
       dark = Math.min(1.5, S.t / 0.25);
       shake = Math.max(shake, 2.5);
+      const cx = f.x, cy = f.y - 170 * f.size;
       for (let i = 0; i < 3; i++) {
         const a = rnd(0, Math.PI * 2), r = rnd(60, 160) * f.size;
-        parts.push({ t: 'spark', x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r * 1.3, vx: rnd(-30, 30), vy: rnd(-420, -200), life: rnd(0.3, 0.6), max: 0.6, c: i ? GOLD : '#ffffff', w: rnd(2, 4) });
+        parts.push({ t: 'spark', x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r * 1.3, vx: rnd(-30, 30), vy: rnd(-420, -200), life: rnd(0.3, 0.6), max: 0.6, c: i ? S.col : '#ffffff', w: rnd(2, 4) });
       }
-    } else if (S.t < 1.3) {
-      if (S.stage === 0) { S.stage = 1; Sfx.play('jump'); Sfx.play('swoosh'); dust(f.x, GROUND, 24, 2); ring(f.x, GROUND, 'rgba(255,220,120,', 220); shake += 8; f.thrust = 1; }
-      const u = (S.t - 0.9) / 0.4;
-      f.z = u * u * 800; f.thrust = 1;
-      dark = 1.5;
-      if (Math.random() < 0.8) parts.push({ t: 'fire', x: f.x + rnd(-20, 20), y: f.y - rnd(0, 60), vx: rnd(-40, 40), vy: rnd(100, 300), r: rnd(10, 20), life: 0.5, max: 0.75 });
-    } else if (S.t < 1.78) {
-      if (S.stage === 1) {
-        S.stage = 2; Sfx.play('superDive');
-        S.sx = clamp(o.x - f.facing * 460, LEFT - 160, RIGHT + 160);
-      }
-      const u = (S.t - 1.3) / 0.48, e = Math.pow(u, 1.5);
-      const ex = o.x - f.facing * 100 * o.size;
-      f.x = S.sx + (ex - S.sx) * e;
-      f.z = 480 + (Math.max(o.z, 40) + 30 - 480) * e;
-      f.rot = -0.65; f.thrust = 1;
-      dark = 1.5;
-      for (let i = 0; i < 3; i++) parts.push({ t: 'fire', x: f.x - f.facing * rnd(0, 60), y: f.y - 180 * f.size + rnd(-40, 40), vx: -f.facing * rnd(100, 300), vy: rnd(-200, -60), r: rnd(14, 28), life: 0.45, max: 0.75 });
-      sparks(f.x, f.y - 180 * f.size, GOLD, 2, 300);
     } else {
-      superImpact();
-      return;
+      const tt = S.t - 0.9;
+      SUPER_UPD[S.type](S, tt, dt);
+      if (!superSeq) return;
+      if (S.type !== 'nova') stepFighter(o, f, dt, false);
+      updateSuperParts(S, dt);
     }
+    if (!superSeq) return;
     f.y = GROUND - f.z;
     animPose(f, dt);
   }
-  function superImpact() {
-    const S = superSeq, f = S.f, o = S.o;
-    superSeq = null;
-    f.rot = 0; setState(f, 'idle', true); f.vz = 420; f.vx = -f.facing * 260; f.thrust = 1;
-    if (o.state === 'air' || o.state === 'down' || o.state === 'getup' || o.state === 'frozen' || o.state === 'hurt') { o.koA = 0; setState(o, 'idle', true); }
-    o.invuln = 0;
-    f.comboT = 0;
-    const dmg = (f.isP ? 45 + o.maxHp * 0.12 : 28 + o.maxHp * 0.08) / f.dmgMult * (f.isP ? 1 + (f.dmgMult - 1) * 0.6 : 1);
-    const hx = o.x - f.facing * 30 * o.size, hy = o.y - 180 * o.size;
-    applyHit(f, o, { dmg, push: 280, launch: 1000, unblockable: true, shake: 34, x: hx, y: hy, sfx: 'superHit', stop: 0.24, big: true, isSuper: true, en: 0 });
-    boom(hx, hy, 1.8); boom(hx + rnd(-60, 60), hy + rnd(-80, 40), 1.2); boom(hx + rnd(-60, 60), GROUND - 30, 1.2);
-    ring(hx, hy, 'rgba(255,230,120,', 320); ring(hx, hy, 'rgba(255,255,255,', 200);
-    for (let i = 0; i < 24; i++) { const a = (i / 24) * Math.PI * 2; parts.push({ t: 'spark', x: hx, y: hy, vx: Math.cos(a) * 900, vy: Math.sin(a) * 900, life: 0.5, max: 0.5, c: GOLD, w: 5 }); }
-    flash = 1; dark = 0.8;
-    if (phase === 'fight') { slow = 0.35; slowT = 0.9; }
-    floatText(o.x, o.y - 360 * o.size, 'SUPER!', GOLD, 48);
+
+  function addBolt(S, x, big) {
+    const pts = []; let bx = x, by = -30; pts.push([bx, by]);
+    while (by < GROUND) { bx += rnd(-30, 30); by += rnd(30, 60); pts.push([bx, Math.min(by, GROUND)]); }
+    pts[pts.length - 1][0] = x;
+    parts.push({ t: 'bolt', pts, life: big ? 0.45 : 0.22, max: big ? 0.45 : 0.22, big });
+    sparks(x, GROUND - 10, '#e8f4ff', big ? 30 : 12, big ? 800 : 500);
+    ring(x, GROUND - 10, 'rgba(200,230,255,', big ? 220 : 100);
+    flash = Math.max(flash, big ? 0.9 : 0.25);
+  }
+
+  const SUPER_UPD = {
+    laser(S, tt, dt) {
+      const f = S.f, o = S.o;
+      if (tt < 0.25) { S.pose = 'laserW'; if (!S.stage) { S.stage = 1; Sfx.play('charge'); } S.beam = 0; }
+      else if (tt < 1.45) {
+        S.pose = 'laserA'; S.beam = 1;
+        if (S.stage === 1) { S.stage = 2; Sfx.play('beam'); Sfx.play('superDive'); }
+        shake = Math.max(shake, 7);
+        S.tick = (S.tick || 0) - dt;
+        if (S.tick <= 0 && S.n1 < 10) { S.tick = 0.11; S.n1++; superHit(S, 0.05, { push: 160, stun: 0.4, stop: 0.015, shake: 4 }); }
+      } else {
+        S.beam = Math.max(0, 1 - (tt - 1.45) / 0.4);
+        if (S.stage === 2) { S.stage = 3; superFinal(S, 0.5); }
+      }
+      dark = 1.5;
+      if (tt > 1.95) superEnd();
+    },
+    roket(S, tt, dt) {
+      const f = S.f, o = S.o;
+      S.pose = 'roketA';
+      if (tt < 0.6) {
+        while (S.n1 < Math.floor(tt / 0.035) && S.n1 < 16) {
+          S.n1++;
+          S.p.push({ k: 'up', x: f.x - f.facing * 40 * f.size + rnd(-16, 16), y: f.y - 285 * f.size, vx: rnd(-80, 80), vy: -1150 });
+          if (S.n1 % 3 === 0) Sfx.play('missile');
+        }
+      }
+      if (tt > 0.75) {
+        const want = Math.min(14, Math.floor((tt - 0.75) / 0.075) + 1);
+        while (S.n2 < want) { S.n2++; S.p.push({ k: 'down', x: o.x + rnd(-120, 120), y: -80, vx: 0, vy: 1100 }); }
+      }
+      if (tt > 1.95 && S.stage === 0) { S.stage = 1; S.p.push({ k: 'big', x: o.x, y: -200, vx: 0, vy: 1500 }); Sfx.play('superDive'); }
+      dark = 1.2;
+      if (tt > 2.7 && !S.p.some(q => q.k === 'big')) superEnd();
+    },
+    gempa(S, tt, dt) {
+      const f = S.f, o = S.o;
+      if (tt < 0.4) {
+        S.pose = 'gempaW';
+        if (S.stage === 0) { S.stage = 1; Sfx.play('jump'); dust(f.x, GROUND, 20, 2); S.tx = clamp(o.x - f.facing * 240, LEFT + 30, RIGHT - 30); }
+        const u = tt / 0.4; f.z = (1 - (1 - u) * (1 - u)) * 900;
+      } else if (tt < 0.62) {
+        S.pose = 'gempaA';
+        const u = (tt - 0.4) / 0.22; f.z = 900 * (1 - u * u);
+        f.x += (S.tx - f.x) * Math.min(1, dt * 12);
+      } else {
+        if (S.stage === 1) {
+          S.stage = 2; f.z = 0;
+          shake += 34; flash = 0.8; Sfx.play('explode');
+          dust(f.x, GROUND, 40, 3); ring(f.x, GROUND, 'rgba(255,190,110,', 380);
+          parts.push({ t: 'crack', x: f.x, life: 2.6, max: 2.6, pts: [-1, 1].map(dir => { const a = [[f.x, GROUND + 4]]; let x = f.x; while (x > -20 && x < W + 20) { x += dir * rnd(30, 60); a.push([x, GROUND + 4 + rnd(-4, 26)]); } return a; }) });
+        }
+        shake = Math.max(shake, 6);
+        const times = [0.8, 1.02, 1.26], fr = [0.2, 0.25, 0.55], ln = [480, 560, 950];
+        while (S.n1 < 3 && tt >= times[S.n1]) {
+          const i = S.n1++;
+          parts.push({ t: 'pillar', x: o.x + rnd(-10, 10), life: 0.75, max: 0.75, h: 170 + i * 70 });
+          if (i < 2) superHit(S, fr[i], { launch: ln[i], push: 40, sfx: 'boom', stop: 0.06, shake: 12 });
+          else superFinal(S, fr[i], { launch: ln[i] });
+          Sfx.play('explode');
+          for (let j = 0; j < 10; j++) parts.push({ t: 'debris', x: o.x + rnd(-40, 40), y: GROUND - 10, vx: rnd(-300, 300), vy: rnd(-800, -400), a: rnd(0, 6), va: rnd(-12, 12), s: rnd(8, 16), life: 1.3, max: 1.3, c: '#7a6a58' });
+        }
+      }
+      dark = 1.2;
+      if (tt > 2.05) superEnd();
+    },
+    pedang(S, tt, dt) {
+      const f = S.f, o = S.o;
+      if (tt < 0.3) { S.pose = 'pedangW'; S.sword = tt / 0.3; S.big = 0; if (S.stage === 0) { S.stage = 1; Sfx.play('saber'); } }
+      else if (tt < 1.5) {
+        S.sword = 1;
+        const want = Math.min(6, Math.floor((tt - 0.3) / 0.2) + 1);
+        while (S.n1 < want) {
+          S.n1++;
+          f.trail.push({ x: f.x, y: f.y, rot: 0, pose: Object.assign({}, f.pose), facing: f.facing, life: 0.3 });
+          const side = f.x < o.x ? 1 : -1;
+          f.x = clamp(o.x + side * 175 * o.size, LEFT + 30, RIGHT - 30);
+          f.facing = o.x >= f.x ? 1 : -1;
+          S.pose = S.n1 % 2 ? 'pedangA' : 'pedangB';
+          parts.push({ t: 'slash', x: o.x, y: o.y - 190 * o.size, a: rnd(-0.9, 0.9), life: 0.45, max: 0.45, c: S.col });
+          Sfx.play('slash');
+          superHit(S, 0.07, { push: 0, stun: 0.45, stop: 0.03, shake: 6 });
+        }
+      } else if (tt < 1.8) {
+        S.pose = 'pedangB'; S.big = Math.min(1, (tt - 1.5) / 0.25);
+        f.facing = o.x >= f.x ? 1 : -1;
+        if (S.stage === 1) { S.stage = 2; Sfx.play('saber'); }
+      } else {
+        S.pose = 'pedangA';
+        if (S.stage === 2) {
+          S.stage = 3; Sfx.play('slash');
+          parts.push({ t: 'slash', x: o.x, y: o.y - 190 * o.size, a: Math.PI / 2 - 0.15 * f.facing, life: 0.7, max: 0.7, big: true, c: S.col });
+          superFinal(S, 0.58, { launch: 900 });
+        }
+      }
+      dark = 1.3;
+      if (tt > 2.35) superEnd();
+    },
+    petir(S, tt, dt) {
+      const f = S.f, o = S.o;
+      S.pose = 'petirA';
+      f.z = tt < 0.4 ? (tt / 0.4) * 110 : 110 + Math.sin(tt * 6) * 8;
+      dark = 1.8;
+      while (S.n1 < 8 && tt >= 0.4 + S.n1 * 0.15) {
+        S.n1++;
+        addBolt(S, o.x + rnd(-25, 25), false);
+        Sfx.play('zap'); Sfx.play('boom', 0.4);
+        superHit(S, 0.05, { push: 40, stun: 0.4, stop: 0.02, shake: 7, y: o.y - 200 * o.size });
+      }
+      if (tt >= 1.85 && S.stage === 0) {
+        S.stage = 1; addBolt(S, o.x, true); Sfx.play('thunder');
+        superFinal(S, 0.6);
+      }
+      if (tt > 2.4) superEnd();
+    },
+    ais(S, tt, dt) {
+      const f = S.f, o = S.o;
+      S.snow = Math.min(1, S.t / 0.6);
+      for (let i = 0; i < 4; i++) parts.push({ t: 'spark', x: rnd(-50, W + 50), y: rnd(-40, 300), vx: -f.facing * rnd(250, 450), vy: rnd(100, 260), life: 0.6, max: 0.6, c: '#ffffff', w: rnd(1.5, 3) });
+      if (tt < 0.5) S.pose = 'aisW';
+      else if (tt < 0.8) {
+        S.pose = 'aisA';
+        if (S.stage === 0) { S.stage = 1; Sfx.play('beam'); S.wx0 = f.x; }
+        S.waveX = S.wx0 + (o.x - S.wx0) * ((tt - 0.5) / 0.3);
+        if (Math.random() < 0.9) parts.push({ t: 'debris', x: S.waveX, y: GROUND - 6, vx: rnd(-80, 80), vy: rnd(-500, -250), a: rnd(0, 6), va: rnd(-10, 10), s: rnd(6, 12), life: 0.8, max: 0.8, c: '#d8f7ff' });
+      }
+      if (tt >= 0.8 && S.stage === 1) {
+        S.stage = 2; S.waveX = null;
+        superHit(S, 0.2, { freeze: 3.5, push: 0, stop: 0.08, shake: 10 });
+        S.crystal = 1; Sfx.play('freeze'); ice(o.x, o.y - 160 * o.size, 16);
+      }
+      if (tt >= 0.95 && tt < 1.4) {
+        S.pose = 'jetA'; f.thrust = 1;
+        const tx = clamp(o.x - f.facing * 140 * o.size, LEFT + 30, RIGHT - 30);
+        f.x += (tx - f.x) * Math.min(1, dt * 9);
+      } else if (tt >= 1.4 && tt < 1.5) S.pose = 'crossA';
+      if (tt >= 1.5 && S.stage === 2) {
+        S.stage = 3; S.crystal = 0;
+        superFinal(S, 0.8);
+        ice(o.x, o.y - 160 * o.size, 60); Sfx.play('shatter');
+      }
+      dark = 1.0;
+      if (tt > 2.15) superEnd();
+    },
+    nova(S, tt, dt) {
+      const f = S.f, o = S.o;
+      if (tt < 0.4) {
+        S.pose = 'superUp';
+        if (S.stage === 0) { S.stage = 1; Sfx.play('jump'); Sfx.play('swoosh'); dust(f.x, GROUND, 24, 2); ring(f.x, GROUND, 'rgba(255,220,120,', 220); shake += 8; }
+        const u = tt / 0.4; f.z = u * u * 800; f.thrust = 1;
+        if (Math.random() < 0.8) parts.push({ t: 'fire', x: f.x + rnd(-20, 20), y: f.y - rnd(0, 60), vx: rnd(-40, 40), vy: rnd(100, 300), r: rnd(10, 20), life: 0.5, max: 0.75 });
+      } else if (tt < 0.88) {
+        S.pose = 'jetA';
+        if (S.stage === 1) { S.stage = 2; Sfx.play('superDive'); S.sx = clamp(o.x - f.facing * 460, LEFT - 160, RIGHT + 160); }
+        const u = (tt - 0.4) / 0.48, e = Math.pow(u, 1.5);
+        const ex = o.x - f.facing * 100 * o.size;
+        f.x = S.sx + (ex - S.sx) * e;
+        f.z = 480 + (Math.max(o.z, 40) + 30 - 480) * e;
+        f.rot = -0.65; f.thrust = 1;
+        for (let i = 0; i < 3; i++) parts.push({ t: 'fire', x: f.x - f.facing * rnd(0, 60), y: f.y - 180 * f.size + rnd(-40, 40), vx: -f.facing * rnd(100, 300), vy: rnd(-200, -60), r: rnd(14, 28), life: 0.45, max: 0.75 });
+        sparks(f.x, f.y - 180 * f.size, GOLD, 2, 300);
+      } else {
+        if (o.state === 'air' || o.state === 'down' || o.state === 'getup' || o.state === 'frozen' || o.state === 'hurt') { o.koA = 0; setState(o, 'idle', true); }
+        superFinal(S, 1, { launch: 1000 });
+        superEnd();
+        f.vz = 420; f.vx = -f.facing * 260; f.thrust = 1;
+        return;
+      }
+      dark = 1.5;
+    },
+  };
+
+  function updateSuperParts(S, dt) {
+    const o = S.o;
+    for (const q of S.p) {
+      if (q.k === 'up') { q.x += q.vx * dt; q.y += q.vy * dt; if (q.y < -120) q.dead = true; if (Math.random() < 0.5) parts.push({ t: 'smoke', x: q.x, y: q.y + 10, vx: 0, vy: 30, r: 5, life: 0.4, max: 0.6, c: '220,220,230' }); }
+      else if (q.k === 'down' || q.k === 'big') {
+        q.vx = (o.x - q.x) * 3;
+        q.x += q.vx * dt; q.y += q.vy * dt;
+        if (Math.random() < 0.6) parts.push({ t: 'smoke', x: q.x, y: q.y - 16, vx: 0, vy: -30, r: q.k === 'big' ? 12 : 5, life: 0.4, max: 0.6, c: '220,220,230' });
+        const hitY = o.y - (q.k === 'big' ? 260 : 300) * o.size;
+        if (q.y >= hitY && Math.abs(q.x - o.x) < (q.k === 'big' ? 120 : 75) * o.size) {
+          q.dead = true;
+          if (q.k === 'down') { superHit(S, 0.035, { push: 40, stun: 0.4, sfx: 'boom', stop: 0.015, shake: 5, x: q.x, y: q.y }); boom(q.x, q.y, 0.55); }
+          else superFinal(S, 0.51);
+        } else if (q.y > GROUND) { q.dead = true; boom(q.x, GROUND - 6, 0.5); }
+      } else { q.life -= dt; if (q.life <= 0) q.dead = true; }
+    }
+    S.p = S.p.filter(q => !q.dead);
   }
 
   function doKO(l) {
     if (phase === 'ko') return;
+    if (superSeq) superEnd();
     phase = 'ko'; phaseT = 0;
     loser = l; winner = l === P ? E : P;
     setState(l, 'ko', true);
@@ -763,9 +984,10 @@ const Game = (() => {
       case 'win': Object.assign(p, POSE.win); p.fs += Math.sin(f.t * 6) * 0.08; break;
       case 'ko': Object.assign(p, POSE.ko); break;
       case 'super': {
-        const st = superSeq && superSeq.f === f ? superSeq.t : 9;
-        Object.assign(p, st < 0.9 ? POSE.superW : st < 1.3 ? POSE.superUp : POSE.jetA);
-        if (st < 0.9) { p.fs += Math.sin(f.t * 50) * 0.03; p.bs -= Math.sin(f.t * 50) * 0.03; }
+        const S = superSeq && superSeq.f === f ? superSeq : null;
+        const key = !S || S.t < 0.9 ? 'superW' : S.pose;
+        Object.assign(p, POSE[key] || POSE.superW);
+        if (key === 'superW') { p.fs += Math.sin(f.t * 50) * 0.03; p.bs -= Math.sin(f.t * 50) * 0.03; }
         break;
       }
       default: {
@@ -1047,13 +1269,14 @@ const Game = (() => {
   }
   function drawSword(f) {
     const m = POWERS.pedang;
-    if (!(f.state === 'special' && f.curPower === 'pedang')) return;
-    if (f.phaseA === 'rec' && f.stateT > m.wind + m.act + 0.15) return;
+    const S = superSeq && superSeq.f === f && superSeq.type === 'pedang' && superSeq.t >= 0.9 ? superSeq : null;
+    if (!S && !(f.state === 'special' && f.curPower === 'pedang')) return;
+    if (!S && f.phaseA === 'rec' && f.stateT > m.wind + m.act + 0.15) return;
     const pts = Robot.points(f);
     let dx = pts.handF.x - pts.elbowF.x, dy = pts.handF.y - pts.elbowF.y;
     const l = Math.hypot(dx, dy) || 1; dx /= l; dy /= l;
-    const grow = f.phaseA === 'wind' ? clamp(f.stateT / m.wind, 0, 1) : 1;
-    const len = 130 * f.size * grow;
+    const grow = S ? (S.sword || 0) : f.phaseA === 'wind' ? clamp(f.stateT / m.wind, 0, 1) : 1;
+    const len = 130 * f.size * grow * (S ? 1.4 + (S.big || 0) * 2.2 : 1);
     const x0 = pts.handF.x - dx * 6, y0 = pts.handF.y - dy * 6, x1 = x0 + dx * len, y1 = y0 + dy * len;
     ctx.save();
     ctx.lineCap = 'round';
@@ -1067,7 +1290,7 @@ const Game = (() => {
     ctx.restore();
   }
   function drawIce(f) {
-    if (f.state !== 'frozen') return;
+    if (f.state !== 'frozen' || (superSeq && superSeq.crystal && superSeq.o === f)) return;
     const s = f.size, x = f.x - 78 * s, y = f.y - 330 * s, w = 156 * s, h = 336 * s;
     const left = clamp(1 - f.stateT / f.stun, 0, 1);
     ctx.save();
@@ -1227,6 +1450,20 @@ const Game = (() => {
       } else if (p.t === 'ring') {
         ctx.strokeStyle = p.c + a + ')'; ctx.lineWidth = 5 * a + 1;
         ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.stroke();
+      } else if (p.t === 'slash') {
+        const L = p.big ? 1100 : 760, wv = (p.big ? 26 : 12) * Math.min(1, a * 1.6);
+        const dx = Math.cos(p.a) * L / 2, dy = Math.sin(p.a) * L / 2;
+        ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+        ctx.globalAlpha = a; ctx.strokeStyle = p.c; ctx.lineWidth = wv * 2.2;
+        ctx.beginPath(); ctx.moveTo(p.x - dx, p.y - dy); ctx.lineTo(p.x + dx, p.y + dy); ctx.stroke();
+        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = wv * 0.7; ctx.stroke();
+        ctx.restore();
+      } else if (p.t === 'bolt') {
+        ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineJoin = 'round';
+        ctx.strokeStyle = `rgba(150,200,255,${a * 0.7})`; ctx.lineWidth = p.big ? 46 : 18;
+        ctx.beginPath(); p.pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke();
+        ctx.strokeStyle = `rgba(255,255,255,${a})`; ctx.lineWidth = p.big ? 14 : 6; ctx.stroke();
+        ctx.restore();
       } else if (p.t === 'arc') {
         const R = { kick: 115, spin: 150, up: 120, down: 120, big: 165 }[p.kind] * p.size;
         const [a0, a1] = { kick: [-0.9, 0.7], spin: [-1.7, 1.1], up: [1.3, -1.5], down: [-1.5, 1.3], big: [-2.3, 1.6] }[p.kind];
@@ -1422,16 +1659,18 @@ const Game = (() => {
 
   function drawSuperBack() {
     if (!superSeq) return;
-    const S = superSeq, f = S.f;
+    const S = superSeq, f = S.f, tt = S.t - 0.9, rgb = rgbOf(S.col);
     const cx = f.x, cy = f.y - 170 * f.size;
     ctx.save();
+    if (S.type === 'ais' && S.snow) { ctx.fillStyle = `rgba(190,235,255,${0.22 * S.snow})`; ctx.fillRect(-M * 3, -M * 3, W + M * 6, H + M * 6); }
     ctx.globalCompositeOperation = 'lighter';
-    if (S.t < 1.3) {
-      const pw = S.t < 0.9 ? Math.min(1, S.t / 0.3) : 1 - (S.t - 0.9) / 0.4;
+    const charging = S.t < 0.9 || (S.type === 'nova' && tt < 0.4);
+    if (charging) {
+      const pw = S.t < 0.9 ? Math.min(1, S.t / 0.3) : 1 - tt / 0.4;
       const g = ctx.createRadialGradient(cx, cy, 10, cx, cy, 260 * f.size);
-      g.addColorStop(0, `rgba(255,240,170,${0.8 * pw})`); g.addColorStop(0.5, `rgba(255,190,40,${0.35 * pw})`); g.addColorStop(1, 'rgba(0,0,0,0)');
+      g.addColorStop(0, `rgba(255,255,230,${0.8 * pw})`); g.addColorStop(0.5, `rgba(${rgb},${0.4 * pw})`); g.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, 260 * f.size, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = `rgba(255,220,90,${0.28 * pw})`;
+      ctx.fillStyle = `rgba(${rgb},${0.3 * pw})`;
       for (let i = 0; i < 14; i++) {
         const a = time * 1.6 + (i / 14) * Math.PI * 2, L = 420 * f.size;
         ctx.beginPath(); ctx.moveTo(cx, cy);
@@ -1439,9 +1678,8 @@ const Game = (() => {
         ctx.lineTo(cx + Math.cos(a + 0.08) * L, cy + Math.sin(a + 0.08) * L);
         ctx.closePath(); ctx.fill();
       }
-    } else {
-      // ekor komet
-      const tx = superSeq.sx - f.facing * 120, ty = GROUND - 600 - 180 * f.size;
+    } else if (S.type === 'nova' && tt >= 0.4) {
+      const tx = S.sx - f.facing * 120, ty = GROUND - 600 - 180 * f.size;
       const g = ctx.createLinearGradient(f.x, f.y - 180 * f.size, tx, ty);
       g.addColorStop(0, 'rgba(255,250,210,.95)'); g.addColorStop(0.3, 'rgba(255,190,40,.6)'); g.addColorStop(1, 'rgba(255,120,0,0)');
       ctx.strokeStyle = g; ctx.lineCap = 'round';
@@ -1449,19 +1687,114 @@ const Game = (() => {
       ctx.beginPath(); ctx.moveTo(f.x, f.y - 180 * f.size); ctx.lineTo(tx, ty); ctx.stroke();
       ctx.lineWidth = 50 * f.size; ctx.globalAlpha = 1;
       ctx.beginPath(); ctx.moveTo(f.x, f.y - 180 * f.size); ctx.lineTo(tx, ty); ctx.stroke();
+    } else if (S.type === 'petir') {
+      // aura elektrik
+      const g = ctx.createRadialGradient(cx, cy, 10, cx, cy, 200 * f.size);
+      g.addColorStop(0, 'rgba(200,235,255,.35)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, 200 * f.size, 0, Math.PI * 2); ctx.fill();
+    }
+    if (S.type === 'ais' && S.waveX != null) {
+      const x0 = Math.min(S.wx0, S.waveX), x1 = Math.max(S.wx0, S.waveX);
+      ctx.fillStyle = 'rgba(200,245,255,.55)';
+      for (let x = x0; x <= x1; x += 26) {
+        const h = 26 + ((x * 13) % 30);
+        ctx.beginPath(); ctx.moveTo(x - 12, GROUND); ctx.lineTo(x, GROUND - h); ctx.lineTo(x + 12, GROUND); ctx.closePath(); ctx.fill();
+      }
     }
     ctx.restore();
   }
+
+  function drawMissile(x, y, vx, vy, accent, sc) {
+    const a = Math.atan2(vy, vx);
+    ctx.save(); ctx.translate(x, y); ctx.rotate(a); ctx.scale(sc, sc);
+    ctx.globalCompositeOperation = 'lighter';
+    const fl = 16 + Math.random() * 10;
+    ctx.fillStyle = 'rgba(255,170,60,.9)';
+    ctx.beginPath(); ctx.moveTo(-12, -5); ctx.lineTo(-12 - fl, 0); ctx.lineTo(-12, 5); ctx.closePath(); ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+    Robot.rr(ctx, -13, -5.5, 24, 11, 5); ctx.fillStyle = '#e9edf3'; ctx.fill();
+    ctx.lineWidth = 2.5; ctx.strokeStyle = '#141a2c'; ctx.stroke();
+    ctx.fillStyle = accent; ctx.beginPath(); ctx.moveTo(11, -5.5); ctx.quadraticCurveTo(20, 0, 11, 5.5); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.restore();
+  }
+
   function drawSuperFront() {
     if (!superSeq) return;
-    const f = superSeq.f;
-    if (!f._goldD || f._goldD.src !== f.d) f._goldD = Object.assign({}, f.d, { glow: '#ffe066', _p: null, src: f.d });
+    const S = superSeq, f = S.f, o = S.o;
+    // aura berwarna pada robot
+    if (!f._supD || f._supD.src !== f.d || f._supD.glow !== S.col) f._supD = Object.assign({}, f.d, { glow: S.col, _p: null, src: f.d });
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
-    ctx.globalAlpha = 0.3 + 0.15 * Math.sin(time * 25);
-    Robot.draw(ctx, Object.assign({}, f, { d: f._goldD }), 'ghost');
+    ctx.globalAlpha = 0.28 + 0.14 * Math.sin(time * 25);
+    Robot.draw(ctx, Object.assign({}, f, { d: f._supD }), 'ghost');
     ctx.restore();
     ctx.globalAlpha = 1;
+    // laser hiper
+    if (S.type === 'laser' && S.beam > 0) {
+      const pts = Robot.points(f);
+      const ox = (pts.handF.x + pts.handB.x) / 2 + f.facing * 10, oy = (pts.handF.y + pts.handB.y) / 2;
+      const w = (95 + Math.sin(time * 60) * 10) * S.beam * f.size;
+      const ex = f.facing > 0 ? W + 60 : -60, x0 = Math.min(ox, ex), x1 = Math.max(ox, ex);
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      const g = ctx.createLinearGradient(0, oy - w, 0, oy + w);
+      g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(0.25, S.col); g.addColorStop(0.5, '#ffffff'); g.addColorStop(0.75, S.col); g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g; ctx.fillRect(x0, oy - w, x1 - x0, w * 2);
+      ctx.fillStyle = 'rgba(255,255,255,.7)';
+      for (let i = 0; i < 6; i++) { const x = x0 + Math.random() * (x1 - x0), y = oy + rnd(-w, w) * 0.8; ctx.fillRect(x, y, 40, 3); }
+      const rg = ctx.createRadialGradient(ox, oy, 0, ox, oy, w * 1.6);
+      rg.addColorStop(0, '#ffffff'); rg.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(ox, oy, w * 1.6, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+    // roket
+    for (const q of S.p) {
+      if (q.k === 'up') drawMissile(q.x, q.y, q.vx, q.vy, f.d.accent, 1.1);
+      else if (q.k === 'down') drawMissile(q.x, q.y, q.vx, q.vy, f.d.accent, 1.2);
+      else if (q.k === 'big') drawMissile(q.x, q.y, q.vx, q.vy, f.d.accent, 3.2);
+    }
+    // kristal ais gergasi
+    if (S.type === 'ais' && S.crystal) {
+      const s = o.size, cx = o.x, top = o.y - 380 * s, bot = o.y + 4, w = 120 * s;
+      ctx.save();
+      ctx.globalAlpha = 0.55;
+      const g = ctx.createLinearGradient(cx - w, top, cx + w, bot);
+      g.addColorStop(0, '#e9fbff'); g.addColorStop(0.5, '#9fe7ff'); g.addColorStop(1, '#d4f6ff');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(cx, top - 40 * s); ctx.lineTo(cx + w, top + 60 * s); ctx.lineTo(cx + w * 0.9, bot - 20 * s);
+      ctx.lineTo(cx, bot); ctx.lineTo(cx - w * 0.9, bot - 20 * s); ctx.lineTo(cx - w, top + 60 * s); ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha = 0.95; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 4; ctx.stroke();
+      ctx.globalAlpha = 0.6; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(cx, top - 40 * s); ctx.lineTo(cx, bot); ctx.moveTo(cx - w, top + 60 * s); ctx.lineTo(cx + w * 0.3, bot - 60 * s); ctx.stroke();
+      ctx.restore();
+      if (Math.random() < 0.4) sparks(cx + rnd(-w, w), rnd(top, bot), '#ffffff', 1, 80);
+    }
+  }
+
+  function drawGroundParts() {
+    for (const p of parts) {
+      const a = Math.max(0, p.life / p.max);
+      if (p.t === 'crack') {
+        ctx.save(); ctx.globalAlpha = Math.min(1, a * 2);
+        ctx.strokeStyle = '#1a140f'; ctx.lineWidth = 5; ctx.lineJoin = 'round';
+        for (const line of p.pts) { ctx.beginPath(); line.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke(); }
+        ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = 'rgba(255,120,40,.6)'; ctx.lineWidth = 2;
+        for (const line of p.pts) { ctx.beginPath(); line.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke(); }
+        ctx.restore();
+      } else if (p.t === 'pillar') {
+        const u = 1 - a, grow = u < 0.15 ? u / 0.15 : u > 0.7 ? 1 - (u - 0.7) / 0.3 : 1;
+        const h = p.h * grow, w = 60;
+        ctx.save();
+        ctx.fillStyle = '#7a6550'; ctx.strokeStyle = '#141a2c'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(p.x - w, GROUND + 4); ctx.lineTo(p.x - w * 0.45, GROUND - h * 0.7); ctx.lineTo(p.x, GROUND - h); ctx.lineTo(p.x + w * 0.5, GROUND - h * 0.65); ctx.lineTo(p.x + w, GROUND + 4); ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#9b8468'; ctx.beginPath(); ctx.moveTo(p.x - w * 0.3, GROUND); ctx.lineTo(p.x, GROUND - h * 0.9); ctx.lineTo(p.x + w * 0.15, GROUND); ctx.closePath(); ctx.fill();
+        ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = `rgba(255,140,40,${0.5 * grow})`;
+        ctx.beginPath(); ctx.ellipse(p.x, GROUND, w * 1.3, 16, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      }
+    }
   }
 
   function render() {
@@ -1481,6 +1814,7 @@ const Game = (() => {
     if (P) drawShadow(P);
     const order = [E, P].filter(Boolean);
     if (phase === 'ko' || phase === 'done') order.sort((a, b) => (a === loser ? -1 : 1));
+    drawGroundParts();
     drawSuperBack();
     for (const f of order) drawFighter(f);
     drawSuperFront();

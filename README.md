@@ -59,8 +59,19 @@ Musuh juga ada kuasa masing-masing, dan Raja Gerhana boleh guna semua kuasa seca
 ### ⭐ Serangan SUPER
 
 Serangan paling hebat. **Bar emas ⭐** (di bawah bar tenaga) penuh perlahan-lahan apabila kamu memukul musuh, buat kombo atau dipukul. Bila penuh, tekan **⭐ SUPER**:
-skrin jadi gelap, kamera zum, robot bercahaya emas, terbang ke langit dan menjunam macam komet. Musuh terpelanting dan hilang separuh nyawa (musuh biasa). Serangan ini tak boleh ditahan.
-Bermula peringkat 3, musuh juga boleh guna Serangan SUPER mereka sendiri!
+skrin jadi gelap, kamera zum, robot bercahaya, kemudian keluar SUPER yang **berlainan ikut kuasa ⚡ yang dipakai**:
+
+| Kuasa dipakai | Serangan SUPER |
+|---|---|
+| ⚡ Meriam Laser | **Meriam Hiper**: laser gergasi berterusan, musuh ditolak ke dinding |
+| 🚀 Roket Berpandu | **Hujan Roket**: 15 roket jatuh dari langit, yang terakhir roket gergasi |
+| 🌋 Hentakan Gempa | **Gempa Gergasi**: hentak dari langit, tanah retak, tiang batu meletus |
+| 🗡️ Pedang Tenaga | **Tetakan Seribu**: tetak dari semua arah, kemudian pedang gergasi |
+| 🌩️ Panahan Petir | **Ribut Petir**: terapung di langit, 9 petir menyambar |
+| ❄️ Sinar Beku | **Zaman Ais**: ribut salji, musuh dalam kristal ais gergasi, kemudian dipecahkan |
+
+Musuh biasa hilang lebih kurang separuh nyawa. Serangan ini tak boleh ditahan atau dielak.
+Bermula peringkat 3, musuh juga boleh guna Serangan SUPER mereka sendiri (Raja Gerhana pilih secara rawak, termasuk Nova Gergasi: terbang & menjunam macam komet)!
 
 ## ⏰ Masa Rehat (setiap 10 minit)
 
