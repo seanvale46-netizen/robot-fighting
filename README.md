@@ -25,6 +25,36 @@ Tiada pemasangan diperlukan: game ini hanya HTML + JavaScript (tiada pelayan, ti
 
 Di telefon, pusingkan peranti ke kedudukan **melintang**.
 
+### 🥊 Kombo
+
+Tekan butang dengan cepat, satu demi satu, semasa robot sedang menyerang:
+
+| Butang | Kombo |
+|---|---|
+| 👊 👊 👊 | **Uppercut Gergasi**: lambung musuh ke udara |
+| 👊 👊 👊 🦶 | **Hentakan Meteor**: lompat & hempas musuh ke tanah |
+| 👊 👊 🦶 | **Tendang Puting Beliung**: tendangan pusing, musuh tercampak jauh |
+| 🦶 🦶 | **Backflip Kick**: balik kuang sambil menendang ke atas |
+| 💨 👊 | **Tumbukan Jet**: elak, kemudian meluru dengan roket |
+| Musuh di udara + 👊 / 🦶 | **Kombo Udara**: pukul sebelum musuh jatuh |
+
+Senarai ini juga ada dalam game (butang **📜 Kombo & Kuasa** di menu, atau semasa jeda).
+
+### ⚡ Kuasa khas
+
+Pukul musuh untuk mengisi tenaga ⚡. Bila penuh, tekan **⚡ Kuasa**. Beli dan pilih kuasa di **🔧 Garaj → ⚡ Kuasa Khas**:
+
+| Kuasa | Harga | Kesan |
+|---|---|---|
+| ⚡ Meriam Laser | percuma | Tembakan laser sepanjang skrin |
+| 🚀 Roket Berpandu | 400 🪙 | 6 roket terbang mengejar musuh |
+| 🌋 Hentakan Gempa | 600 🪙 | Lompat tinggi & hentak tanah, gelombang gegaran (tak boleh ditahan perisai, mesti elak!) |
+| 🗡️ Pedang Tenaga | 800 🪙 | Meluru & tetak musuh 5 kali |
+| 🌩️ Panahan Petir | 1000 🪙 | Panggil 3 petir dari langit |
+| ❄️ Sinar Beku | 1200 🪙 | Bekukan musuh selama 2 saat |
+
+Musuh juga ada kuasa masing-masing, dan Raja Gerhana boleh guna semua kuasa secara rawak.
+
 ## ⏰ Masa Rehat (setiap 10 minit)
 
 - Selepas 10 minit bermain, permainan **berhenti automatik** dan Masa Rehat bermula.
@@ -54,10 +84,10 @@ Tekan **Ibu Bapa** di menu dan jawab soalan sifir (untuk menghalang kanak-kanak 
 
 ## 🎮 Ciri-ciri game
 
-- 10 musuh asli (robot & raksasa), setiap satu dengan rupa, kelajuan dan kekuatan berbeza; selepas peringkat 10 musuh terus menjadi lebih kuat.
-- Kombo, perisai, elakan dengan kesan bayang, dan tembakan kuasa ⚡.
+- 10 musuh asli (robot & raksasa), setiap satu dengan rupa, kelajuan, kekuatan dan kuasa khas berbeza; selepas peringkat 10 musuh terus menjadi lebih kuat. Musuh peringkat tinggi juga pandai buat kombo.
+- 6 kombo (uppercut, backflip, hentakan meteor dan lain-lain) dengan lambungan ke udara, perisai, elakan dengan kesan bayang, dan 6 kuasa khas.
 - Latar bandar siang, petang, malam dan ribut.
-- Naik taraf: Kuasa Tumbukan, Perisai Besi, Enjin Pendorong, Teras Tenaga, serta 6 warna cat robot.
+- Garaj: naik taraf (Kuasa Tumbukan, Perisai Besi, Enjin Pendorong, Teras Tenaga), beli kuasa khas, dan 6 warna cat robot.
 - Kemajuan disimpan secara automatik dalam pelayar (`localStorage`).
 
 ## 📁 Struktur fail

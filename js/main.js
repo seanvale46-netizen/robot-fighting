@@ -26,7 +26,7 @@
   layout();
 
   // ───────────── Skrin ─────────────
-  const SCREENS = ['scr-menu', 'scr-result', 'scr-garage', 'scr-pause', 'scr-gate', 'scr-settings'];
+  const SCREENS = ['scr-menu', 'scr-result', 'scr-garage', 'scr-pause', 'scr-gate', 'scr-settings', 'scr-combos'];
   let current = 'scr-menu';
   function show(id) {
     current = id;
@@ -50,6 +50,8 @@
   function fight(level) {
     Sfx.unlock();
     Game.startLevel(level || Save.d.level);
+    const pw = Game.POWERS[Save.d.power] || Game.POWERS.laser;
+    $('tc-special-ico').textContent = pw.ikon;
     show(null);
     if (!isTouch()) { $('keys-hint').classList.remove('hidden'); clearTimeout(fight._t); fight._t = setTimeout(() => $('keys-hint').classList.add('hidden'), 7000); }
   }
@@ -96,7 +98,45 @@
   const MAXL = 10;
   const cost = l => Math.round((120 + l * 80 + l * l * 40) / 10) * 10;
 
+  let garTab = 'upg';
+  function setTab(t) {
+    garTab = t;
+    document.querySelectorAll('#gar-tabs .tab').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
+    for (const id of ['upg', 'pow', 'skin']) $('tab-' + id).classList.toggle('hidden', id !== t);
+  }
+  document.querySelectorAll('#gar-tabs .tab').forEach(b => b.addEventListener('click', () => { Sfx.play('click'); setTab(b.dataset.tab); }));
+
+  function buildPowers() {
+    const pl = $('pow-list');
+    pl.innerHTML = '';
+    for (const id of Game.POWER_IDS) {
+      const pw = Game.POWERS[id];
+      const own = Save.d.powers.includes(id), on = Save.d.power === id;
+      const row = document.createElement('div');
+      row.className = 'upg' + (on ? ' equipped' : '');
+      row.innerHTML = `<div class="upg-ico">${pw.ikon}</div><div class="upg-info"><b>${pw.nama}</b><span>${pw.desc}</span></div>`;
+      const b = document.createElement('button');
+      b.className = 'btn buy ' + (on ? 'green' : own ? 'blue' : Save.d.coins >= pw.harga ? 'primary' : 'locked');
+      b.innerHTML = on ? '✔ Dipakai' : own ? 'Pakai' : `🪙 ${pw.harga}`;
+      b.disabled = on;
+      b.addEventListener('click', () => {
+        if (!own) {
+          if (Save.d.coins < pw.harga) { Sfx.play('wrong'); toast('Syiling tidak cukup! Main atau belajar 📚 untuk dapat lebih 🪙'); return; }
+          Save.d.coins -= pw.harga; Save.d.powers.push(id); Sfx.play('buy');
+          toast(`${pw.ikon} ${pw.nama} dibeli & dipakai!`);
+        } else Sfx.play('click');
+        Save.d.power = id; Save.save();
+        Game.refreshLook();
+        buildGarage(); refreshInfo();
+      });
+      row.appendChild(b);
+      pl.appendChild(row);
+    }
+  }
+
   function buildGarage() {
+    buildPowers();
+    setTab(garTab);
     const ul = $('upg-list');
     ul.innerHTML = '';
     for (const u of UPG) {
@@ -149,6 +189,18 @@
     if (!t) { t = document.createElement('div'); t.className = 'toast'; app.appendChild(t); }
     t.textContent = msg; t.classList.add('show');
     clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  // ───────────── Senarai kombo ─────────────
+  let comboReturn = 'scr-menu';
+  function openCombos(from) {
+    comboReturn = from;
+    $('combo-list').innerHTML = Game.COMBOS.map(c => `<div class="combo-item"><div class="combo-keys">${c.keys}</div><div><b>${c.nama}</b><span>${c.desc}</span></div></div>`).join('');
+    $('power-info').innerHTML = Game.POWER_IDS.map(id => {
+      const p = Game.POWERS[id], own = Save.d.powers.includes(id);
+      return `<div class="combo-item ${own ? '' : 'lock'}"><div class="combo-keys">${p.ikon}</div><div><b>${p.nama}${Save.d.power === id ? ' ✔' : own ? '' : ' 🔒'}</b><span>${p.desc}</span></div></div>`;
+    }).join('');
+    show('scr-combos');
   }
 
   // ───────────── Pintu ibu bapa & tetapan ─────────────
@@ -220,6 +272,9 @@
   on('btn-garage', () => { Sfx.play('click'); goGarage(); });
   on('btn-learn', () => { Sfx.play('click'); Rehat.start(true); });
   on('btn-parent', () => { Sfx.play('click'); openGate(); });
+  on('btn-combos', () => { Sfx.play('click'); openCombos('scr-menu'); });
+  on('pause-combos', () => { Sfx.play('click'); openCombos('scr-pause'); });
+  on('combos-back', () => { Sfx.play('click'); show(comboReturn); });
   on('btn-sound', () => {
     Save.d.settings.sound = !Save.d.settings.sound; Save.save();
     Sfx.setEnabled(Save.d.settings.sound); refreshInfo(); Sfx.play('click');

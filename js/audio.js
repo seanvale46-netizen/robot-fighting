@@ -79,6 +79,15 @@ const Sfx = (() => {
     go: () => { tone({ f: 880, type: 'square', d: 0.4, v: 0.12 }); tone({ f: 1320, type: 'triangle', d: 0.5, v: 0.12 }); },
     alarm: () => { [0, 0.3, 0.6].forEach(t => { tone({ f: 988, type: 'square', d: 0.14, v: 0.1, delay: t }); tone({ f: 784, type: 'square', d: 0.14, v: 0.1, delay: t + 0.15 }); }); seq([523, 659, 784, 1047], 'triangle', 0.2, 0.1, 0.25); },
     tick: () => { tone({ f: 1500, type: 'sine', d: 0.04, v: 0.06 }); },
+    swoosh: (vol) => { noise({ ft: 'bandpass', fq: 300, fqTo: 2600, d: 0.25, v: 0.26, vol }); tone({ f: 200, to: 600, type: 'triangle', d: 0.2, v: 0.06, vol }); },
+    upper: (vol) => { noise({ fq: 1200, d: 0.16, v: 0.55, vol }); tone({ f: 120, to: 420, d: 0.22, v: 0.5, vol }); tone({ f: 70, to: 40, d: 0.3, v: 0.5, vol }); },
+    slash: () => { noise({ ft: 'highpass', fq: 1500, fqTo: 6000, d: 0.14, v: 0.3 }); tone({ f: 1800, to: 600, type: 'sawtooth', d: 0.12, v: 0.05 }); },
+    saber: () => { tone({ f: 90, to: 140, type: 'sawtooth', d: 0.4, v: 0.1 }); tone({ f: 180, to: 280, type: 'square', d: 0.4, v: 0.04 }); noise({ ft: 'bandpass', fq: 2000, d: 0.3, v: 0.06 }); },
+    missile: () => { noise({ ft: 'bandpass', fq: 800, fqTo: 3000, d: 0.3, v: 0.16 }); tone({ f: 300, to: 900, type: 'square', d: 0.15, v: 0.03 }); },
+    freeze: () => { [1568, 2093, 2637, 3136].forEach((f, i) => tone({ f, type: 'sine', d: 0.3, v: 0.07, delay: i * 0.04 })); noise({ ft: 'highpass', fq: 5000, d: 0.4, v: 0.08 }); },
+    shatter: () => { noise({ ft: 'highpass', fq: 2500, d: 0.45, v: 0.3 }); [2349, 3136, 2794, 3520].forEach((f, i) => tone({ f, type: 'triangle', d: 0.15, v: 0.06, delay: i * 0.03 })); },
+    jump: () => { tone({ f: 180, to: 520, type: 'triangle', d: 0.18, v: 0.12 }); noise({ fq: 400, d: 0.15, v: 0.2 }); },
+    zap: () => { tone({ f: 60, to: 1200, type: 'sawtooth', d: 0.45, v: 0.08 }); noise({ ft: 'highpass', fq: 3000, d: 0.45, v: 0.1 }); },
   };
 
   function play(name, vol) { const f = S[name]; if (f) try { f(vol); } catch (e) { /* abaikan */ } }

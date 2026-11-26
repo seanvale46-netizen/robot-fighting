@@ -358,6 +358,7 @@ const Robot = (() => {
     f._alpha = ctx.globalAlpha;
     ctx.translate(f.x, f.y);
     ctx.scale(f.facing * f.size, f.size);
+    if (f.rot) { ctx.translate(0, -150); ctx.rotate(-f.rot); ctx.translate(0, 150); }
     if (f.koA) { ctx.translate(-20, 0); ctx.rotate(-f.koA); ctx.translate(20, 0); }
     ctx.lineJoin = 'round'; ctx.lineCap = 'round';
     if (d.tail) drawTail(ctx, J, pb, f.t);
@@ -380,6 +381,7 @@ const Robot = (() => {
     return {
       handF: w({ x: J.aF.hd.x + Math.sin(J.aF.a2) * 14, y: J.aF.hd.y + Math.cos(J.aF.a2) * 14 }),
       handB: w(J.aB.hd),
+      elbowF: w(J.aF.el),
       footF: w({ x: J.lF.ft.x + 20, y: J.lF.ft.y }),
       core: w(J.core),
       head: w({ x: J.neck.x, y: J.neck.y - 24 }),

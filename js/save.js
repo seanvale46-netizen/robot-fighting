@@ -11,6 +11,8 @@ const Save = (() => {
       upg: { kuasa: 0, perisai: 0, laju: 0, tenaga: 0 },
       skin: 0,
       skins: [0],
+      power: 'laser',
+      powers: ['laser'],
       rehat: { elapsed: 0, pending: false },
       settings: { intervalMin: 10, perSubject: 1, sound: true, subjects: {} },
       asked: {},

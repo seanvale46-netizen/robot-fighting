@@ -38,6 +38,7 @@ button:disabled { cursor: default; }
 .btn.green { background: linear-gradient(#4cd67a, #22a650); }
 .btn.gray { background: linear-gradient(#6b7591, #4b546d); }
 .btn.red { background: linear-gradient(#ff6b6b, #d63a3a); }
+.btn.purple { background: linear-gradient(#a77bff, #7446e0); }
 .btn.locked { background: linear-gradient(#5b6276, #40465a); color: #c9cfdc; }
 .btn.big { font-size: 1.45em; padding: .55em 1.3em; }
 .btn.small { font-size: .85em; padding: .45em .8em; }
@@ -95,6 +96,7 @@ button:disabled { cursor: default; }
 .menu-col .btn { width: 75%; }
 .menu-col .btn.big { flex-direction: column; gap: 0; }
 .menu-col .btn.small { width: auto; }
+.menu-row { display: flex; gap: .5em; justify-content: center; }
 .menu-col .rehat-info { background: rgba(10,14,30,.7); padding: .3em .9em; border-radius: 2em; }
 
 /* Kawalan & HUD */
@@ -308,3 +310,28 @@ button:disabled { cursor: default; }
 }
 #rotate div { font-size: 3em; animation: wobble 1.4s infinite; }
 body.portrait #rotate { display: flex; }
+
+/* Tab garaj */
+.tabs { display: flex; gap: .35em; }
+.tab {
+  flex: 1; padding: .45em .4em; border-radius: .7em .7em 0 0; font-weight: 900; font-size: .9em;
+  background: rgba(255,255,255,.07); color: #c9d2e6; border-bottom: .2em solid transparent;
+}
+.tab.on { background: rgba(255,210,63,.18); color: #fff; border-bottom-color: #ffd23f; }
+.tab-body { display: flex; flex-direction: column; gap: .45em; }
+#upg-list, #pow-list { display: flex; flex-direction: column; gap: .45em; }
+.upg.equipped { box-shadow: inset 0 0 0 .15em #ffd23f; background: rgba(255,210,63,.12); }
+
+/* Senarai kombo */
+.combos-card { width: 56em; padding: .9em 1.3em; font-size: .88em; }
+#power-info span { display: none; }
+.combos-card h2 { font-size: 1.6em; margin-bottom: .1em; }
+#power-info { grid-template-columns: 1fr 1fr 1fr; }
+#power-info .combo-keys { min-width: 2em; }
+.combos-card h3 { margin: .6em 0 .2em; font-size: 1.2em; }
+.combo-list { display: grid; grid-template-columns: 1fr 1fr; gap: .45em; text-align: left; margin: .5em 0; }
+.combo-item { display: flex; align-items: center; gap: .6em; background: rgba(255,255,255,.07); border-radius: .7em; padding: .45em .6em; }
+.combo-keys { font-size: 1.15em; white-space: nowrap; background: rgba(0,0,0,.25); padding: .2em .45em; border-radius: .5em; min-width: 5.2em; text-align: center; }
+.combo-item b { display: block; color: #ffe14d; font-size: .95em; }
+.combo-item span { font-size: .75em; opacity: .85; }
+.combo-item.lock { opacity: .55; }

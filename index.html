@@ -23,7 +23,7 @@
         <button class="tc dir" data-k="right" aria-label="Kanan">▶</button>
       </div>
       <div class="pad-right">
-        <button class="tc special" data-k="special"><span>⚡</span><small>Kuasa</small></button>
+        <button class="tc special" data-k="special"><span id="tc-special-ico">⚡</span><small>Kuasa</small></button>
         <button class="tc sm" data-k="block"><span>🛡️</span><small>Perisai</small></button>
         <button class="tc sm" data-k="dodge"><span>💨</span><small>Elak</small></button>
         <button class="tc" data-k="kick"><span>🦶</span><small>Tendang</small></button>
@@ -44,7 +44,10 @@
         <button id="btn-play" class="btn primary big">▶ MAIN <small id="play-level">Peringkat 1</small></button>
         <button id="btn-garage" class="btn blue">🔧 GARAJ ROBOT</button>
         <button id="btn-learn" class="btn green">📚 BELAJAR &amp; DAPAT 🪙</button>
-        <button id="btn-parent" class="btn gray small">👨‍👩‍👧 Ibu Bapa</button>
+        <div class="menu-row">
+          <button id="btn-combos" class="btn purple small">📜 Kombo &amp; Kuasa</button>
+          <button id="btn-parent" class="btn gray small">👨‍👩‍👧 Ibu Bapa</button>
+        </div>
         <p class="rehat-info">⏰ Masa rehat dalam <b class="rehat-left">10:00</b></p>
       </div>
     </section>
@@ -71,9 +74,14 @@
           <h2>🔧 GARAJ ROBOT</h2>
           <span class="pill coins">🪙 <b class="coin-val">0</b></span>
         </div>
-        <div id="upg-list"></div>
-        <h3>🎨 Cat Robot</h3>
-        <div id="skin-list"></div>
+        <div class="tabs" id="gar-tabs">
+          <button class="tab on" data-tab="upg">⬆ Naik Taraf</button>
+          <button class="tab" data-tab="pow">⚡ Kuasa Khas</button>
+          <button class="tab" data-tab="skin">🎨 Cat</button>
+        </div>
+        <div id="tab-upg" class="tab-body"><div id="upg-list"></div></div>
+        <div id="tab-pow" class="tab-body hidden"><div id="pow-list"></div></div>
+        <div id="tab-skin" class="tab-body hidden"><div id="skin-list"></div></div>
         <div class="row">
           <button id="gar-fight" class="btn primary">▶ LAWAN <small id="gar-level">Peringkat 1</small></button>
           <button id="gar-menu" class="btn gray">🏠 Menu</button>
@@ -88,9 +96,23 @@
         <h2>⏸ BERHENTI SEKEJAP</h2>
         <div class="col">
           <button id="pause-resume" class="btn primary">▶ Sambung</button>
+          <button id="pause-combos" class="btn purple">📜 Senarai Kombo</button>
           <button id="pause-menu" class="btn gray">🏠 Menu Utama</button>
         </div>
         <p class="hint-small">Kawalan: ◀ ▶ gerak, 👊 tumbuk, 🦶 tendang, 🛡️ tahan untuk perisai, 💨 elak, ⚡ kuasa khas (bila tenaga penuh).</p>
+      </div>
+    </section>
+
+    <!-- SENARAI KOMBO -->
+    <section id="scr-combos" class="screen dim">
+      <div class="card combos-card">
+        <h2>📜 Senarai Kombo</h2>
+        <p class="hint-small">Tekan butang dengan cepat, satu demi satu, semasa robot sedang menyerang!</p>
+        <div id="combo-list" class="combo-list"></div>
+        <h3>⚡ Kuasa Khas</h3>
+        <p class="hint-small">Pukul musuh untuk isi tenaga ⚡. Bila penuh, tekan <b>⚡ Kuasa</b>. Beli kuasa baharu di 🔧 Garaj.</p>
+        <div id="power-info" class="combo-list"></div>
+        <button id="combos-back" class="btn primary">✔ Faham!</button>
       </div>
     </section>
 
